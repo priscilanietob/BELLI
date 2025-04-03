@@ -1,0 +1,54 @@
+import SwiftUI
+
+struct MenuPrincipalView: View {
+    var body: some View {
+        NavigationView {
+            VStack {
+                Text("Menú Principal")
+                    .font(.largeTitle)
+                    .padding()
+                
+                NavigationLink(destination: PerfilView()) {
+                    Text("Ir a Perfil")
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding()
+                }
+            }
+            .navigationTitle("Menú Principal")
+        }
+    }
+}
+
+struct PerfilView: View {
+    var body: some View {
+        VStack {
+            Text("Perfil del Usuario")
+                .font(.largeTitle)
+                .padding()
+            
+            Text("Nombre: Juan Pérez")
+            Text("Correo: juanperez@example.com")
+            Text("Tipo de Usuario: Paciente")
+        }
+        .navigationTitle("Perfil")
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        MenuPrincipalView()
+    }
+}
+
+@main
+struct MiApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}

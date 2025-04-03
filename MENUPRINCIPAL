@@ -4,51 +4,109 @@ struct MenuPrincipalView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Text("Menú Principal")
-                    .font(.largeTitle)
+                Text("Resumen de Salud")
+                    .font(.title)
+                    .bold()
                     .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
                 
-                NavigationLink(destination: PerfilView()) {
-                    Text("Ir a Perfil")
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Tratamiento")
+                        .font(.headline)
+                    
+                    CalendarView()
                         .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
+                        .background(Color(UIColor.systemBackground))
                         .cornerRadius(10)
-                        .padding()
+                        .shadow(radius: 2)
+                    
+                    HStack {
+                        Text("Diuréticos Tiazídicos")
+                        Spacer()
+                        Button("Detalles") {}
+                            .foregroundColor(.blue)
+                    }
+                    .padding()
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(10)
+                    .shadow(radius: 2)
+                    
+                    Text("Hábitos Saludables")
+                        .font(.headline)
+                    
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Inicia con energía esta mañana (30 puntos)")
+                            .bold()
+                        Text("Hoy intenta caminar 15 minutos más que ayer. ¡Gran avance!")
+                        HStack {
+                            Button("Rechazar") {}
+                                .foregroundColor(.blue)
+                            Spacer()
+                            Button("Aceptar") {}
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    .padding()
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(10)
+                    .shadow(radius: 2)
+                }
+                .padding()
+                
+                Spacer()
+                
+                HStack {
+                    NavigationLink(destination: PerfilView()) {
+                        Image(systemName: "person.circle")
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                    }
+                    Spacer()
+                    Button(action: {}) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .frame(width: 50, height: 50)
+                            .foregroundColor(.blue)
+                    }
+                    Spacer()
+                    Button(action: {}) {
+                        Image(systemName: "globe")
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                    }
+                }
+                .padding()
+                .background(Color(UIColor.systemBackground))
+                .shadow(radius: 2)
+            }
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+struct CalendarView: View {
+    var body: some View {
+        VStack {
+            Text("Abril 2025")
+                .font(.headline)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
+                ForEach(1...30, id: \ .self) { day in
+                    Text("\(day)")
+                        .frame(width: 30, height: 30)
+                        .background(day == 26 ? Color.blue : Color.clear)
+                        .clipShape(Circle())
+                        .foregroundColor(day == 26 ? .white : .black)
                 }
             }
-            .navigationTitle("Menú Principal")
         }
     }
 }
 
 struct PerfilView: View {
     var body: some View {
-        VStack {
-            Text("Perfil del Usuario")
-                .font(.largeTitle)
-                .padding()
-            
-            Text("Nombre: Juan Pérez")
-            Text("Correo: juanperez@example.com")
-            Text("Tipo de Usuario: Paciente")
-        }
-        .navigationTitle("Perfil")
-    }
-}
-
-struct ContentView: View {
-    var body: some View {
-        MenuPrincipalView()
-    }
-}
-
-@main
-struct MiApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+        Text("Perfil del Usuario")
+            .font(.largeTitle)
     }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct MenuPrincipalView: View {
+    @State private var isShowingNuevoTratamiento = false
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -64,11 +66,16 @@ struct MenuPrincipalView: View {
                             .frame(width: 40, height: 40)
                     }
                     Spacer()
-                    Button(action: {}) {
+                    Button(action: {
+                        isShowingNuevoTratamiento = true
+                    }) {
                         Image(systemName: "plus.circle.fill")
                             .resizable()
                             .frame(width: 50, height: 50)
                             .foregroundColor(.blue)
+                    }
+                    .sheet(isPresented: $isShowingNuevoTratamiento) {
+                        NuevoTratamientoView()
                     }
                     Spacer()
                     Button(action: {}) {
@@ -86,13 +93,14 @@ struct MenuPrincipalView: View {
     }
 }
 
+// Vista del Calendario
 struct CalendarView: View {
     var body: some View {
         VStack {
             Text("Abril 2025")
                 .font(.headline)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
-                ForEach(1...30, id: \ .self) { day in
+                ForEach(1...30, id: \.self) { day in
                     Text("\(day)")
                         .frame(width: 30, height: 30)
                         .background(day == 26 ? Color.blue : Color.clear)
@@ -104,9 +112,69 @@ struct CalendarView: View {
     }
 }
 
+// Vista del Perfil
 struct PerfilView: View {
     var body: some View {
         Text("Perfil del Usuario")
             .font(.largeTitle)
+    }
+}
+
+// Vista de Nuevo Tratamiento
+struct NuevoTratamientoView: View {
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.blue)
+                        .padding()
+                }
+                Spacer()
+                Text("Nuevo Tratamiento")
+                    .font(.title2)
+                    .bold()
+                    .padding()
+                Spacer()
+            }
+            
+            Form {
+                Section(header: Text("Nombre del Tratamiento")) {
+                    TextField("Nombre", text: .constant(""))
+                    Stepper("Dosis: 1", value: .constant(1), in: 1...10)
+                    TextField("Características", text: .constant(""))
+                }
+                
+                Section(header: Text("Agregar Fotografías")) {
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de empaque")
+                        }
+                    }
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de tratamiento")
+                        }
+                    }
+                }
+                
+                Section {
+                    Button(action: {}) {
+                        Text("Continuar")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                }
+            }
+        }
     }
 }

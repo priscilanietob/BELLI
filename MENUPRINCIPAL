@@ -2,6 +2,10 @@ import SwiftUI
 
 struct MenuPrincipalView: View {
     @State private var isShowingNuevoTratamiento = false
+    @State private var habitosAceptados: [String: Bool] = [:]
+    @State private var selectedDate = Date()
+    @State private var showDateDetails = false
+    @State private var medicamentos: [Date: [Medicamento]] = [:]
     
     var body: some View {
         NavigationView {
@@ -18,7 +22,7 @@ struct MenuPrincipalView: View {
                     Text("Tratamiento")
                         .font(.headline)
                     
-                    CalendarView()
+                    CalendarView(selectedDate: $selectedDate, showDateDetails: $showDateDetails, medicamentos: $medicamentos)
                         .padding()
                         .background(Color(UIColor.systemBackground))
                         .cornerRadius(10)
@@ -43,17 +47,33 @@ struct MenuPrincipalView: View {
                             .bold()
                         Text("Hoy intenta caminar 15 minutos más que ayer. ¡Gran avance!")
                         HStack {
-                            Button("Rechazar") {}
-                                .foregroundColor(.blue)
+                            Button("Rechazar") {
+                                habitosAceptados["energiaMatutina"] = false
+                            }
+                            .foregroundColor(.red)
                             Spacer()
-                            Button("Aceptar") {}
-                                .foregroundColor(.blue)
+                            Button("Aceptar") {
+                                habitosAceptados["energiaMatutina"] = true
+                            }
+                            .foregroundColor(.green)
                         }
+                        .padding(.top, 5)
                     }
                     .padding()
                     .background(Color(UIColor.systemBackground))
                     .cornerRadius(10)
                     .shadow(radius: 2)
+                    .overlay(
+                        Group {
+                            if habitosAceptados["energiaMatutina"] == true {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.green, lineWidth: 2)
+                            } else if habitosAceptados["energiaMatutina"] == false {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.red, lineWidth: 2)
+                            }
+                        }
+                    )
                 }
                 .padding()
                 
@@ -75,7 +95,7 @@ struct MenuPrincipalView: View {
                             .foregroundColor(.blue)
                     }
                     .sheet(isPresented: $isShowingNuevoTratamiento) {
-                        NuevoTratamientoView()
+                        NuevoTratamientoView(medicamentos: $medicamentos, selectedDate: $selectedDate)
                     }
                     Spacer()
                     Button(action: {}) {
@@ -90,24 +110,233 @@ struct MenuPrincipalView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(isPresented: $showDateDetails) {
+            DateDetailsView(date: selectedDate, medicamentos: $medicamentos)
+        }
     }
 }
 
-// Vista del Calendario
+struct Medicamento: Identifiable, Codable {
+    let id = UUID()
+    let nombre: String
+    let dosis: Int
+    let caracteristicas: String
+    let fecha: Date
+}
+
+// Vista del Calendario mejorada
 struct CalendarView: View {
+    @Binding var selectedDate: Date
+    @Binding var showDateDetails: Bool
+    @Binding var medicamentos: [Date: [Medicamento]]
+    
+    let calendar = Calendar.current
+    let daysOfWeek = ["D", "L", "M", "M", "J", "V", "S"]
+    
     var body: some View {
         VStack {
-            Text("Abril 2025")
+            Text(monthYearFormatter.string(from: selectedDate))
                 .font(.headline)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
-                ForEach(1...30, id: \.self) { day in
-                    Text("\(day)")
-                        .frame(width: 30, height: 30)
-                        .background(day == 26 ? Color.blue : Color.clear)
-                        .clipShape(Circle())
-                        .foregroundColor(day == 26 ? .white : .black)
+                .padding(.bottom, 5)
+            
+            // Días de la semana
+            HStack {
+                ForEach(daysOfWeek, id: \.self) { day in
+                    Text(day)
+                        .frame(maxWidth: .infinity)
                 }
             }
+            
+            // Días del mes
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
+                ForEach(daysInMonth(for: selectedDate), id: \.self) { date in
+                    let day = calendar.component(.day, from: date)
+                    let hasMedicamentos = medicamentos[date.startOfDay] != nil
+                    
+                    Button(action: {
+                        selectedDate = date
+                        showDateDetails = true
+                    }) {
+                        VStack(spacing: 2) {
+                            Text("\(day)")
+                                .frame(width: 30, height: 30)
+                                .background(isSameDay(date, selectedDate) ? Color.blue : Color.clear)
+                                .clipShape(Circle())
+                                .foregroundColor(isSameDay(date, selectedDate) ? .white : .black)
+                            
+                            if hasMedicamentos {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 6, height: 6)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func isSameDay(_ date1: Date, _ date2: Date) -> Bool {
+        calendar.isDate(date1, inSameDayAs: date2)
+    }
+    
+    private func daysInMonth(for date: Date) -> [Date] {
+        guard let monthInterval = calendar.dateInterval(of: .month, for: date),
+              let monthFirstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start) else {
+            return []
+        }
+        
+        var days: [Date] = []
+        var currentDate = monthFirstWeek.start
+        
+        // Añadir días del mes anterior si es necesario
+        if !calendar.isDate(currentDate, equalTo: monthInterval.start, toGranularity: .month) {
+            while currentDate < monthInterval.start {
+                days.append(currentDate)
+                currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+            }
+        }
+        
+        // Añadir días del mes actual
+        while calendar.isDate(currentDate, equalTo: monthInterval.start, toGranularity: .month) {
+            days.append(currentDate)
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        }
+        
+        // Añadir días del siguiente mes si es necesario para completar la cuadrícula
+        let remainingDays = (42 - days.count) // 6 semanas de 7 días
+        for _ in 0..<remainingDays {
+            days.append(currentDate)
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        }
+        
+        return days
+    }
+    
+    private var monthYearFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        formatter.locale = Locale(identifier: "es_ES")
+        return formatter
+    }
+}
+
+struct DateDetailsView: View {
+    let date: Date
+    @Binding var medicamentos: [Date: [Medicamento]]
+    @State private var isAddingMedicamento = false
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                Text(dateFormatter.string(from: date))
+                    .font(.title)
+                    .padding()
+                
+                List {
+                    if let medicamentosDelDia = medicamentos[date.startOfDay], !medicamentosDelDia.isEmpty {
+                        Section(header: Text("Medicamentos programados")) {
+                            ForEach(medicamentosDelDia) { medicamento in
+                                VStack(alignment: .leading) {
+                                    Text(medicamento.nombre)
+                                        .font(.headline)
+                                    Text("Dosis: \(medicamento.dosis)")
+                                    Text(medicamento.caracteristicas)
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            .onDelete { indices in
+                                if var medicamentosDelDia = medicamentos[date.startOfDay] {
+                                    medicamentosDelDia.remove(atOffsets: indices)
+                                    medicamentos[date.startOfDay] = medicamentosDelDia
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No hay medicamentos programados para este día")
+                            .foregroundColor(.gray)
+                    }
+                }
+                .listStyle(InsetGroupedListStyle())
+                
+                Button(action: {
+                    isAddingMedicamento = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus")
+                        Text("Agregar Medicamento")
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                .padding()
+            }
+            .navigationTitle("Detalles del Día")
+            .sheet(isPresented: $isAddingMedicamento) {
+                AddMedicamentoView(date: date, medicamentos: $medicamentos)
+            }
+        }
+    }
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.locale = Locale(identifier: "es_ES")
+        return formatter
+    }
+}
+
+struct AddMedicamentoView: View {
+    let date: Date
+    @Binding var medicamentos: [Date: [Medicamento]]
+    @Environment(\.presentationMode) var presentationMode
+    
+    @State private var nombre = ""
+    @State private var dosis = 1
+    @State private var caracteristicas = ""
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Información del Medicamento")) {
+                    TextField("Nombre", text: $nombre)
+                    Stepper("Dosis: \(dosis)", value: $dosis, in: 1...10)
+                    TextField("Características", text: $caracteristicas)
+                }
+                
+                Section {
+                    Button(action: {
+                        let nuevoMedicamento = Medicamento(
+                            nombre: nombre,
+                            dosis: dosis,
+                            caracteristicas: caracteristicas,
+                            fecha: date
+                        )
+                        
+                        let startOfDay = date.startOfDay
+                        if medicamentos[startOfDay] == nil {
+                            medicamentos[startOfDay] = [nuevoMedicamento]
+                        } else {
+                            medicamentos[startOfDay]?.append(nuevoMedicamento)
+                        }
+                        
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Text("Guardar")
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                    }
+                    .disabled(nombre.isEmpty)
+                }
+            }
+            .navigationTitle("Nuevo Medicamento")
+            .navigationBarItems(trailing: Button("Cancelar") {
+                presentationMode.wrappedValue.dismiss()
+            })
         }
     }
 }
@@ -123,30 +352,20 @@ struct PerfilView: View {
 // Vista de Nuevo Tratamiento
 struct NuevoTratamientoView: View {
     @Environment(\.presentationMode) var presentationMode
+    @Binding var medicamentos: [Date: [Medicamento]]
+    @Binding var selectedDate: Date
+    
+    @State private var nombre = ""
+    @State private var dosis = 1
+    @State private var caracteristicas = ""
     
     var body: some View {
-        VStack {
-            HStack {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.blue)
-                        .padding()
-                }
-                Spacer()
-                Text("Nuevo Tratamiento")
-                    .font(.title2)
-                    .bold()
-                    .padding()
-                Spacer()
-            }
-            
+        NavigationView {
             Form {
                 Section(header: Text("Nombre del Tratamiento")) {
-                    TextField("Nombre", text: .constant(""))
-                    Stepper("Dosis: 1", value: .constant(1), in: 1...10)
-                    TextField("Características", text: .constant(""))
+                    TextField("Nombre", text: $nombre)
+                    Stepper("Dosis: \(dosis)", value: $dosis, in: 1...10)
+                    TextField("Características", text: $caracteristicas)
                 }
                 
                 Section(header: Text("Agregar Fotografías")) {
@@ -165,7 +384,23 @@ struct NuevoTratamientoView: View {
                 }
                 
                 Section {
-                    Button(action: {}) {
+                    Button(action: {
+                        let nuevoMedicamento = Medicamento(
+                            nombre: nombre,
+                            dosis: dosis,
+                            caracteristicas: caracteristicas,
+                            fecha: selectedDate
+                        )
+                        
+                        let startOfDay = selectedDate.startOfDay
+                        if medicamentos[startOfDay] == nil {
+                            medicamentos[startOfDay] = [nuevoMedicamento]
+                        } else {
+                            medicamentos[startOfDay]?.append(nuevoMedicamento)
+                        }
+                        
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
                         Text("Continuar")
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -173,8 +408,28 @@ struct NuevoTratamientoView: View {
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
+                    .disabled(nombre.isEmpty)
                 }
             }
+            .navigationTitle("Nuevo Tratamiento")
+            .navigationBarItems(leading: Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.blue)
+            })
         }
+    }
+}
+
+extension Date {
+    var startOfDay: Date {
+        return Calendar.current.startOfDay(for: self)
+    }
+}
+
+struct MenuPrincipalView_Previews: PreviewProvider {
+    static var previews: some View {
+        MenuPrincipalView()
     }
 }

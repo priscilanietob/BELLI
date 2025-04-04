@@ -1,0 +1,73 @@
+struct NuevoTratamientoView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var medicamentos: [Medicamento]
+   
+    @State private var nombre = ""
+    @State private var dosis = 1
+    @State private var caracteristicas = ""
+    @State private var fecha = Date()
+    @State private var frecuencia = "Diario"
+    @State private var fechaHora = Date()
+    let frecuencias = ["Cada Domingo", "Cada Lunes", "Cada Martes", "Cada Miercoles", "Cada Jueves", "Cada Viernes", "Cada Sabado", "Diario"]
+   
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Información del Medicamento")) {
+                    TextField("Nombre", text: $nombre)
+                    Stepper("Dosis: \(dosis)", value: $dosis, in: 1...10)
+                    TextField("Características", text: $caracteristicas)
+                    DatePicker("Fecha inicio", selection: $fecha, displayedComponents: .date)
+                    Picker("Frecuencia", selection: $frecuencia) {
+                        ForEach(frecuencias, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                    DatePicker("Hora", selection: $fechaHora, displayedComponents: .hourAndMinute )
+                        .datePickerStyle(.graphical)
+                }
+               
+                Section(header: Text("Agregar Fotografías")) {
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de empaque")
+                        }
+                    }
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de tratamiento")
+                        }
+                    }
+                }
+               
+                Section {
+                    Button(action: {
+                        let nuevoMedicamento = Medicamento(
+                            nombre: nombre,
+                            dosis: dosis,
+                            caracteristicas: caracteristicas,
+                            fecha: fecha,
+                            fechaHora: fechaHora
+                        )
+                        medicamentos.append(nuevoMedicamento)
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Text("Guardar Tratamiento")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .disabled(nombre.isEmpty)
+                }
+            }
+            .navigationTitle("Nuevo Tratamiento")
+            .navigationBarItems(leading: Button("Cancelar") {
+                presentationMode.wrappedValue.dismiss()
+            })
+        }
+    }
+}

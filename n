@@ -1,0 +1,87 @@
+struct NuevoTratamientoView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var medicamentos: [Medicamento]
+    
+    @State private var nombre = ""
+    @State private var dosis = 1
+    @State private var caracteristicas = ""
+    @State private var fechaInicio = Date()
+    @State private var horaToma = Date()
+    @State private var frecuencia = "Diario"
+    let frecuencias = ["Cada Domingo", "Cada Lunes", "Cada Martes", "Cada Miércoles", 
+                      "Cada Jueves", "Cada Viernes", "Cada Sábado", "Diario"]
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Información del Medicamento")) {
+                    TextField("Nombre", text: $nombre)
+                    Stepper("Dosis: \(dosis)", value: $dosis, in: 1...10)
+                    TextField("Características", text: $caracteristicas)
+                    
+                    // Selector solo para fecha
+                    DatePicker("Fecha inicio", 
+                             selection: $fechaInicio,
+                             displayedComponents: .date)
+                    
+                    Picker("Frecuencia", selection: $frecuencia) {
+                        ForEach(frecuencias, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                    
+                    // Selector solo para hora
+                    DatePicker("Hora de toma", 
+                             selection: $horaToma,
+                             displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                }
+                
+                Section(header: Text("Agregar Fotografías")) {
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de empaque")
+                        }
+                    }
+                    Button(action: {}) {
+                        HStack {
+                            Image(systemName: "paperclip")
+                            Text("Agregar fotografía de tratamiento")
+                        }
+                    }
+                }
+                
+                Section {
+                    Button(action: guardarMedicamento) {
+                        Text("Guardar Tratamiento")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .disabled(nombre.isEmpty)
+                }
+            }
+            .navigationTitle("Nuevo Tratamiento")
+            .navigationBarItems(leading: Button("Cancelar") {
+                presentationMode.wrappedValue.dismiss()
+            })
+        }
+    }
+    
+    private func guardarMedicamento() {
+        let nuevoMedicamento = Medicamento(
+            nombre: nombre,
+            dosis: dosis,
+            caracteristicas: caracteristicas,
+            fechaInicio: fechaInicio,
+            horaToma: horaToma,
+            frecuencia: frecuencia
+        )
+        
+        medicamentos.append(nuevoMedicamento)
+        presentationMode.wrappedValue.dismiss()
+    }
+}

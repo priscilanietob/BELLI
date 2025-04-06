@@ -1,0 +1,68 @@
+struct RecomendacionesView: View {
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Recomendaciones")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding(.bottom, 20)
+                    
+                    // Tarjeta 1
+                    RecommendationCard(
+                        title: "El control sobre nuestra propia salud y cómo manejarlo",
+                        content: "Aprende técnicas para tomar el control de tu bienestar y gestionar tu salud de manera proactiva."
+                    )
+                    
+                    // Tarjeta 2
+                    RecommendationCard(
+                        title: "Los mejores hábitos para evitar la fatiga después de una jornada de trabajo",
+                        content: "Descubre rutinas efectivas para recuperar energía después del trabajo y mantener un equilibrio saludable."
+                    )
+                    
+                    // Tarjeta 3
+                    RecommendationCard(
+                        title: "La importancia de la prevención de las enfermedades en la sociedad",
+                        content: "Entiende por qué la prevención es clave para una sociedad más saludable y cómo puedes contribuir."
+                    )
+                    
+                    // Tarjeta 4
+                    RecommendationCard(
+                        title: "El efecto de la meditación y su mejora en la salud mental",
+                        content: "Explora los beneficios científicamente comprobados de la meditación para tu mente y bienestar emocional."
+                    )
+                    
+                    Button(action: {}) {
+                        Text("Ver más")
+                            .foregroundColor(.blue)
+                            .padding(.top, 10)
+                    }
+                }
+                .padding()
+            }
+            .navigationBarTitle("Recomendaciones", displayMode: .inline)
+        }
+    }
+}
+
+struct RecommendationCard: View {
+    let title: String
+    let content: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Text(content)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(10)
+        .shadow(radius: 2)
+    }
+}
